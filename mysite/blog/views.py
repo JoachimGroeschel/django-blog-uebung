@@ -1,4 +1,6 @@
-from django.shortcuts import reverse_lazy
+from django.shortcuts import reverse_lazy, render, get_object_or_404, redirect
+from django.utils import timezone
+
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import (ListView, DetailView, 
                                   TemplateView, CreateView, 
@@ -6,6 +8,7 @@ from django.views.generic import (ListView, DetailView,
                                 )
 from blog.models import Post, Comment
 from forms import PostForm, CommentForm
+from django.contrib.auth.decorators import login_required
 
 
 # Create your views here.
@@ -64,3 +67,46 @@ class DraftListView(LoginRequiredMixin, ListView):
     
     def get_queryset(self):
         return Post.objects.filter(published_date__isnull=True).order_by('created_date')
+    
+#############################################
+    #Comments from here
+#############################################
+
+@login_required
+def psot_publish(request, pk):
+    post = get_object_or_404(Post, pk=pk)
+    post.publish()
+    return redirect('post_detail', pk=pk)
+
+@login_required    
+def add_comment_to_post(request, pk):
+    post = get_object_or_404(Post, pk=pk)
+    if request.method == 'POST':
+        #print("request.POST: ", request.POST)
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            #print("form.cleaned_data: ", form.cleaned_data)
+            comment = form.save(commit=False)
+            comment.post = post
+            comment.save()
+            return redirect('post_detail', pk=post.pk)
+    else:
+        #print("else")
+        form = CommentForm()
+    return render(request, 'blog/comment_form.html', {'form': form})
+
+@login_required
+def comment_approve(request,pk):
+    comment = get_object_or_404(Comment, pk=pk)
+    #print("comment: ", comment)
+    comment.approve()
+    return redirect('post_detail', pk=comment.post.pk)
+
+@login_required
+def commetn_remove(request, pk):
+    comment = get_object_or_404(Comment, pk=pk)
+    #print("comment: ", comment)
+    post_pk = comment.post.pk
+    comment.delete()
+    return redirect('post_detail', pk=post_pk)
+

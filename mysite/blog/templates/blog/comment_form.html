@@ -1,0 +1,14 @@
+{% extends 'blog/base.html' %}
+
+{% block content %}
+    <h1 class='posttitle loader'>{{ post.title }}</h1>
+    <br>
+    <h1>Neuer Kommentar</h1>
+    <form class="post-form" method="POST">
+        {% csrf_token %}
+        {{form.as_table}}
+        <button type="submit" class="save btn btn-default">Kommentar Speichern</button>
+    </form>
+
+    <script>var editor = new MediumEditor('.editable');</script>
+{% endblock %}
